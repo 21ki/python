@@ -33,3 +33,21 @@ ssh-copy-id $IPs #$IPs为所有节点地址包括自身，按照提示输入yes 
 
 
 mkdir -p /etc/ansible
+
+
+
+#ansible 启动tomcat报错
+fatal: [192.168.1.104]: FAILED! => {"changed": true, "cmd": "sh /opt/tomcat-test-8081/bin/startup.sh", "delta": "0:00:00.026094", "end": "2018-11-07 14:18:49.051533", "msg": "non-zero return code", "rc": 1, "start": "2018-11-07 14:18:49.025439", "stderr": "", "stderr_lines": [], "stdout": "Neither the JAVA_HOME nor the JRE_HOME environment variable is defined\nAt least one of these environment variable is needed to run this program", "stdout_lines": ["Neither the JAVA_HOME nor the JRE_HOME environment variable is defined", "At least one of these environment variable is needed to run this program"]}
+        to retry, use: --limit @/root/ansible/tomcat-deploy-192.168.1.104.retry
+#查找问题
+ansible tomcat-104-8181 -m shell -a "java -version"
+发现不能远程调用java环境
+
+原因是ansible 调用java没有找到环境变量（/bin目录下没有找到Java命令所以报错）
+#参考连接https://blog.csdn.net/u014505701/article/details/70062697
+#执行一下命令 问题解决
+ln -s /usr/local/jdk1.8.0_181/bin/jar /bin/jar
+ln -s /usr/local/jdk1.8.0_181/bin/java /bin/java
+ln -s /usr/local/jdk1.8.0_181/bin/javac /bin/javac
+ln -s /usr/local/jdk1.8.0_181/bin/javah /bin/javah
+ln -s /usr/local/jdk1.8.0_181/bin/javadoc /bin/javadoc

@@ -1,0 +1,45 @@
+---
+- name: install tomcat-admin
+  hosts: tomcat-104-8181
+  remote_user: root
+  vars:
+    tomcat: /opt/tomcat-test-8081
+  tasks:
+    - name: "创建备份目录backup"
+      file: dest={{ tomcat }}/backup owner=root group=root state=directory mode=0755
+      ignore_errors: True
+    - name: "创建新war包所在的目录newwar"
+      file: dest={{ tomcat }}/newwar owner=root group=root state=directory mode=0755
+      ignore_errors: True
+    - name: "备份旧的 war"
+      shell: \cp -dprf  {{ tomcat }}/webapps/helloworld.war {{ tomcat }}/backup/helloworld-`date '+%F'`.war
+    - name: "拷贝新的war包到远程服务器"
+      copy: 
+        src=/opt/helloworld.war
+        dest={{ tomcat }}/newwar
+    - name: "停止tomcat服务"
+      shell: ps -ef | grep tomcat | grep {{ tomcat }} | grep -v grep | awk '{print $2}' | xargs kill -9
+      tags: stop
+      ignore_errors: True
+    - name: "删除webapps下旧war包"
+      file: dest={{ tomcat }}/webapps/helloworld.war state=absent
+    - name: "拷贝新的war包到webapps"
+      shell: mv {{ tomcat }}/newwar/helloworld.war {{ tomcat }}/webapps
+    - name: "删除临时文件"
+      raw: rm -rf {{ tomcat }}/temp/*
+    - name: "删除项目缓存"
+      shell: rm -rf {{ tomcat }}/work/Catalina/localhost/helloworld
+#    - name: "启动tomcat服务"
+#      shell: nohup {{ tomcat }}/bin/startup.sh &
+#    - name: "启动tomcat服务"
+#      shell: chdir={{ tomcat }}/bin/ nohup ./startup.sh &
+#    - name: "启动tomcat服务"
+#      shell: cd /opt/tomcat-test-8081/bin && ./startup.sh 
+#    - name: "启动tomcat服务"
+#      command: /bin/sh /opt/tomcat-test-8081/bin/catalina.sh start
+    - name: "启动tomcat服务"
+      shell: nohup {{ tomcat }}/bin/startup.sh &
+      register: command_result
+      failed_when: "'not' in command_result.stderr"
+#    - name: "启动tomcat服务"
+#      shell: sh /opt/tomcat-test-8081/bin/startup.sh
