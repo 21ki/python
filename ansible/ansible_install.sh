@@ -1,3 +1,32 @@
+#检查语法
+ansible-playbook web.yml --syntax-check
+#ansible删除文件夹下面所有文件  先删除整个文件夹然后在重建用这个思路
+ - file: path=/data/tomcat/logs/ state=absent
+ - file: path=/data/tomcat/logs/ state=directory
+docker.yml
+-------------------------------------------------------------------------------------------------
+---
+- name: "dev_test_crs发版"
+  hosts: '{{ hosts }}'
+  remote_user: root
+  vars:
+    tomcat: /opt/tomcat_app
+  tasks:
+    - name: "停止tomcat-docker"
+      shell: docker stop {{ app }} && docker rm -f {{ app }}
+    - name: "删除主机war包"
+      shell: rm -rf /opt/webapps/webapps-{{ app }}/{{ app }}*
+    - name: "拷贝新的war包到远程服务器"
+      copy: 
+        src=/opt/war_test_crs/{{ app }}.war
+        dest=/opt/webapps/webapps-{{ app }}
+    - name: "启动tomcat服务"
+      shell: docker run -itd -p 8080:8080  --restart=always --name={{ app }} \
+             -v /opt/webapps/webapps-{{ app }}:/usr/local/tomcat/webapps \
+             -v /opt/logs:/opt/logs -v /opt/tomcat_logs/tomcat-{{ app }}:/usr/local/tomcat/logs \
+             tomcat:20181112
+-------------------------------------------------------------------------------------------------
+
 #在deploy节点安装及准备ansible
 # Ubuntu 16.04 
 apt-get install git python-pip -y
